@@ -823,7 +823,17 @@ function convertClaudeToGeminiAgent(content) {
     }
   }
 
-  const newFrontmatter = newLines.join('\n').trim();
+  // Bug 1: Strip skills: key — Claude Code-specific, not supported by Gemini CLI schema
+  const filteredLines = newLines.filter(line => {
+    const trimmed = line.trim();
+    return !trimmed.startsWith('skills:') && !trimmed.match(/^-\s+gsd-.*-workflow$/);
+  });
+
+  // Bug 2: Strip # hooks: comment block — Gemini CLI YAML parser rejects
+  // comments inside frontmatter even when commented out
+  const withoutHooks = filteredLines.filter(line => !line.match(/^#/));
+
+  const newFrontmatter = withoutHooks.join('\n').trim();
 
   // Escape ${VAR} patterns in agent body for Gemini CLI compatibility.
   // Gemini's templateString() treats all ${word} patterns as template variables
@@ -939,7 +949,17 @@ function convertClaudeToOpencodeFrontmatter(content) {
   }
 
   // Rebuild frontmatter (body already has tool names converted)
-  const newFrontmatter = newLines.join('\n').trim();
+  // Bug 1: Strip skills: key — Claude Code-specific, not supported by Gemini CLI schema
+  const filteredLines = newLines.filter(line => {
+    const trimmed = line.trim();
+    return !trimmed.startsWith('skills:') && !trimmed.match(/^-\s+gsd-.*-workflow$/);
+  });
+
+  // Bug 2: Strip # hooks: comment block — Gemini CLI YAML parser rejects
+  // comments inside frontmatter even when commented out
+  const withoutHooks = filteredLines.filter(line => !line.match(/^#/));
+
+  const newFrontmatter = withoutHooks.join('\n').trim();
   return `---\n${newFrontmatter}\n---${body}`;
 }
 
